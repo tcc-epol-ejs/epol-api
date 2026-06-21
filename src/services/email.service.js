@@ -1,5 +1,5 @@
 export async function enviarEmailRecuperacao({ email, nome, token }) {
-  const link = `${process.env.FRONTEND_URL}/redefinir-senha?token=${token}`;
+  const link = `${process.env.FRONTEND_URL}/recuperar-senha?token=${token}`;
 
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",

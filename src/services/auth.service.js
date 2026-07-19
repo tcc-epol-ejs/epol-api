@@ -7,10 +7,7 @@ import { enviarEmailRecuperacao } from "./email.service.js";
 
 const SALT_ROUNDS = 10;
 
-/**
- * Cadastra um novo usuário em usuarios.usuarios.
- * A senha nunca é armazenada em texto puro — apenas o hash bcrypt.
- */
+
 export async function cadastrarUsuario({
   nome,
   apelido,

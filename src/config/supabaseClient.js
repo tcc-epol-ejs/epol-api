@@ -17,4 +17,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   realtime: { transport: ws },
 });
 
+// Schema de usuários
 export const usuariosSchema = () => supabase.schema("usuarios");
+
+// Schema de dados políticos
+export const dadosPoliticosSchema = () => supabase.schema("dados_politicos");

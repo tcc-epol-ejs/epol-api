@@ -3,7 +3,17 @@ import {
   autenticarUsuario,
   solicitarRecuperacaoSenha,
   redefinirSenha,
+  buscarUsuarioPorId,
 } from "../services/auth.service.js";
+
+export async function me(req, res, next) {
+  try {
+    const usuario = await buscarUsuarioPorId(req.usuarioId);
+    return res.json({ usuario });
+  } catch (err) {
+    next(err);
+  }
+}
 
 export async function cadastro(req, res, next) {
   try {

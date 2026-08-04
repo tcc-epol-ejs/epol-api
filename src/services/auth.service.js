@@ -7,7 +7,6 @@ import { enviarEmailRecuperacao } from "./email.service.js";
 
 const SALT_ROUNDS = 10;
 
-
 export async function cadastrarUsuario({
   nome,
   apelido,
@@ -144,4 +143,17 @@ export async function redefinirSenha({ token, novaSenha }) {
     .eq("id", recuperacao.id);
 
   if (usadoError) throw usadoError;
+}
+
+export async function buscarUsuarioPorId(id) {
+  const { data: usuario, error } = await usuariosSchema()
+    .from("usuarios")
+    .select("id, nome, apelido, email, estado")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!usuario) throw new ErroAplicacao("Usuário não encontrado.", 404);
+
+  return usuario;
 }

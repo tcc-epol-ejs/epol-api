@@ -51,7 +51,7 @@ export async function cadastrarUsuario({
 export async function autenticarUsuario({ email, senha }) {
   const { data: usuario, error } = await usuariosSchema()
     .from("usuarios")
-    .select("id, nome, apelido, email, senha_hash, estado")
+    .select("id, nome, apelido, email, senha_hash, estado, adm")
     .eq("email", email)
     .maybeSingle();
 
@@ -148,7 +148,7 @@ export async function redefinirSenha({ token, novaSenha }) {
 export async function buscarUsuarioPorId(id) {
   const { data: usuario, error } = await usuariosSchema()
     .from("usuarios")
-    .select("id, nome, apelido, email, estado")
+    .select("id, nome, apelido, email, estado, adm")
     .eq("id", id)
     .maybeSingle();
 

@@ -15,6 +15,7 @@ export async function cadastrarUsuario({
   estado,
   data_nascimento,
   partido_preferencia_id,
+  foto_perfil_url,
 }) {
   const senha_hash = await bcrypt.hash(senha, SALT_ROUNDS);
 
@@ -28,9 +29,11 @@ export async function cadastrarUsuario({
       estado,
       data_nascimento,
       partido_preferencia_id: partido_preferencia_id ?? null,
+      foto_perfil_url: foto_perfil_url ?? null,
+      // adm não é aceito aqui: usa o default (false) do banco
     })
     .select(
-      "id, nome, apelido, email, estado, data_nascimento, partido_preferencia_id, created_at"
+      "id, nome, apelido, email, estado, data_nascimento, partido_preferencia_id, foto_perfil_url, adm, created_at"
     )
     .single();
 
@@ -51,7 +54,9 @@ export async function cadastrarUsuario({
 export async function autenticarUsuario({ email, senha }) {
   const { data: usuario, error } = await usuariosSchema()
     .from("usuarios")
-    .select("id, nome, apelido, email, senha_hash, estado, adm")
+    .select(
+      "id, nome, apelido, email, senha_hash, estado, data_nascimento, partido_preferencia_id, adm, foto_perfil_url"
+    )
     .eq("email", email)
     .maybeSingle();
 
@@ -148,7 +153,9 @@ export async function redefinirSenha({ token, novaSenha }) {
 export async function buscarUsuarioPorId(id) {
   const { data: usuario, error } = await usuariosSchema()
     .from("usuarios")
-    .select("id, nome, apelido, email, estado, adm")
+    .select(
+      "id, nome, apelido, email, estado, data_nascimento, partido_preferencia_id, adm, foto_perfil_url"
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -156,4 +163,72 @@ export async function buscarUsuarioPorId(id) {
   if (!usuario) throw new ErroAplicacao("Usuário não encontrado.", 404);
 
   return usuario;
+}
+
+/**
+ * Atualiza apenas campos permitidos do próprio usuário.
+ * (adm, email e senha_hash ficam de fora de propósito.)
+ */
+const CAMPOS_EDITAVEIS = ["foto_perfil_url"];
+
+export async function atualizarPerfil(id, dados) {
+  const atualizacao = {};
+  for (const campo of CAMPOS_EDITAVEIS) {
+    if (dados[campo] !== undefined) atualizacao[campo] = dados[campo];
+  }
+
+  if (Object.keys(atualizacao).length === 0) {
+    throw new ErroAplicacao("Nenhum campo válido para atualizar.", 400);
+  }
+
+  const { data, error } = await usuariosSchema()
+    .from("usuarios")
+    .update(atualizacao)
+    .eq("id", id)
+    .select(
+      "id, nome, apelido, email, estado, data_nascimento, partido_preferencia_id, adm, foto_perfil_url"
+    )
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new ErroAplicacao("Usuário não encontrado.", 404);
+
+  return data;
+}
+
+
+/**
+ * Exclui a conta do próprio usuário, exigindo a senha atual.
+ */
+export async function excluirConta(id, senha) {
+  const { data: usuario, error } = await usuariosSchema()
+    .from("usuarios")
+    .select("id, senha_hash")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!usuario) throw new ErroAplicacao("Usuário não encontrado.", 404);
+
+  const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
+  if (!senhaValida) {
+    // 403 de propósito: um 401 faria o front achar que a sessão expirou
+    throw new ErroAplicacao("Senha incorreta.", 403);
+  }
+
+  const { error: deleteError } = await usuariosSchema()
+    .from("usuarios")
+    .delete()
+    .eq("id", id);
+
+  if (deleteError) {
+    // 23503 = foreign_key_violation (ainda há dados ligados ao usuário)
+    if (deleteError.code === "23503") {
+      throw new ErroAplicacao(
+        "Não foi possível excluir a conta: existem dados vinculados a ela.",
+        409
+      );
+    }
+    throw deleteError;
+  }
 }

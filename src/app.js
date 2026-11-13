@@ -5,6 +5,7 @@ import candidatosRoutes from "./routes/candidatos.routes.js";
 import partidosRoutes from "./routes/partidos.routes.js";
 import perguntasRoutes from "./routes/perguntas.routes.js";
 import respostasRoutes from "./routes/respostasMatch.routes.js";
+import favoritosRoutes from "./routes/favoritos.routes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
@@ -19,6 +20,7 @@ app.use("/api/candidatos", candidatosRoutes);
 app.use("/api/partidos", partidosRoutes);
 app.use("/api/perguntas", perguntasRoutes);
 app.use("/api/respostas", respostasRoutes);
+app.use("/api/favoritos", favoritosRoutes);
 app.use(errorHandler);
 
 export default app;

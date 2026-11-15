@@ -169,7 +169,14 @@ export async function buscarUsuarioPorId(id) {
  * Atualiza apenas campos permitidos do próprio usuário.
  * (adm, email e senha_hash ficam de fora de propósito.)
  */
-const CAMPOS_EDITAVEIS = ["foto_perfil_url"];
+const CAMPOS_EDITAVEIS = [
+  "nome",
+  "apelido",
+  "email",
+  "estado",
+  "data_nascimento",
+  "foto_perfil_url",
+];
 
 export async function atualizarPerfil(id, dados) {
   const atualizacao = {};
@@ -190,12 +197,17 @@ export async function atualizarPerfil(id, dados) {
     )
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    // 23505 = unique_violation (e-mail já usado por outro usuário)
+    if (error.code === "23505") {
+      throw new ErroAplicacao("Este e-mail já está cadastrado.", 409);
+    }
+    throw error;
+  }
   if (!data) throw new ErroAplicacao("Usuário não encontrado.", 404);
 
   return data;
 }
-
 
 /**
  * Exclui a conta do próprio usuário, exigindo a senha atual.

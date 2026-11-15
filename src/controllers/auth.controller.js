@@ -8,6 +8,9 @@ import {
   excluirConta,
 } from "../services/auth.service.js";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DATA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
 export async function me(req, res, next) {
   try {
     const usuario = await buscarUsuarioPorId(req.usuarioId);
@@ -106,7 +109,43 @@ export async function redefinir(req, res, next) {
 
 export async function editarPerfil(req, res, next) {
   try {
-    const { foto_perfil_url } = req.body;
+    const { nome, apelido, email, estado, data_nascimento, foto_perfil_url } =
+      req.body;
+
+    if (nome !== undefined && (typeof nome !== "string" || !nome.trim())) {
+      return res.status(400).json({ erro: "Nome não pode ficar vazio." });
+    }
+
+    if (
+      apelido !== undefined &&
+      apelido !== null &&
+      typeof apelido !== "string"
+    ) {
+      return res.status(400).json({ erro: "Apelido deve ser um texto." });
+    }
+
+    if (
+      email !== undefined &&
+      (typeof email !== "string" || !EMAIL_REGEX.test(email.trim()))
+    ) {
+      return res.status(400).json({ erro: "E-mail inválido." });
+    }
+
+    if (
+      estado !== undefined &&
+      (typeof estado !== "string" || estado.length !== 2)
+    ) {
+      return res.status(400).json({ erro: "Estado inválido." });
+    }
+
+    if (
+      data_nascimento !== undefined &&
+      (typeof data_nascimento !== "string" || !DATA_REGEX.test(data_nascimento))
+    ) {
+      return res
+        .status(400)
+        .json({ erro: "Data de nascimento inválida (use AAAA-MM-DD)." });
+    }
 
     if (
       foto_perfil_url !== undefined &&
@@ -118,7 +157,15 @@ export async function editarPerfil(req, res, next) {
         .json({ erro: "foto_perfil_url deve ser um texto." });
     }
 
-    const usuario = await atualizarPerfil(req.usuarioId, { foto_perfil_url });
+    const usuario = await atualizarPerfil(req.usuarioId, {
+      nome: nome?.trim(),
+      apelido: apelido === "" ? null : apelido,
+      email: email?.trim().toLowerCase(),
+      estado,
+      data_nascimento,
+      foto_perfil_url,
+    });
+
     return res.json({ usuario });
   } catch (err) {
     next(err);
